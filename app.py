@@ -5,40 +5,252 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
-st.title("Etude de rotation des camions pour la M.O d'enrobé")
-st.divider()
-st.header("1. Simulation de la rotation des camions")
+# Page configuration
+st.set_page_config(
+    page_title="Simulateur de Rotation des Camions",
+    page_icon="🚛",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# Custom CSS for better styling with dark mode compatibility
+st.markdown(
+    """
+<style>
+    .main-header {
+        background: linear-gradient(90deg, #FF6B35 0%, #F7931E 100%);
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        text-align: center;
+        color: white !important;
+    }
+    .section-header {
+        background: linear-gradient(90deg, #4CAF50 0%, #45a049 100%);
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+        color: white !important;
+        text-align: center;
+    }
+    .metric-card {
+        background: var(--background-color, white);
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left: 4px solid #FF6B35;
+    }
+    .stButton > button {
+        background: linear-gradient(90deg, #FF6B35 0%, #F7931E 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 20px !important;
+        padding: 0.5rem 2rem !important;
+        font-weight: bold !important;
+        transition: all 0.3s ease !important;
+    }
+    .stButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+    }
+    .data-section {
+        background: rgba(248, 249, 250, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+    }
+    
+    /* Dark mode specific styles */
+    [data-theme="dark"] .data-section {
+        background: rgba(26, 32, 44, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Info boxes with dark mode support */
+    .info-box {
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+        border-left: 4px solid;
+    }
+    
+    .info-box-success {
+        background: rgba(212, 237, 218, 0.8);
+        border-left-color: #28a745;
+        color: #155724;
+    }
+    
+    .info-box-warning {
+        background: rgba(255, 243, 205, 0.8);
+        border-left-color: #ffc107;
+        color: #856404;
+    }
+    
+    .info-box-info {
+        background: rgba(209, 236, 241, 0.8);
+        border-left-color: #17a2b8;
+        color: #0c5460;
+    }
+    
+    .info-box-error {
+        background: rgba(248, 215, 218, 0.8);
+        border-left-color: #dc3545;
+        color: #721c24;
+    }
+    
+    /* Dark mode overrides for info boxes */
+    [data-theme="dark"] .info-box-success {
+        background: rgba(40, 167, 69, 0.2);
+        color: #9ae6b4;
+    }
+    
+    [data-theme="dark"] .info-box-warning {
+        background: rgba(255, 193, 7, 0.2);
+        color: #fbb040;
+    }
+    
+    [data-theme="dark"] .info-box-info {
+        background: rgba(23, 162, 184, 0.2);
+        color: #74c0fc;
+    }
+    
+    [data-theme="dark"] .info-box-error {
+        background: rgba(220, 53, 69, 0.2);
+        color: #ffa8a8;
+    }
+    
+    /* Text color adjustments */
+    .info-box h3 {
+        color: inherit !important;
+        margin: 0 0 0.5rem 0;
+    }
+    
+    .info-box p {
+        color: inherit !important;
+        margin: 0;
+    }
+    
+    /* Ensure proper contrast in all themes */
+    .main-header h1,
+    .main-header p,
+    .section-header h2 {
+        color: white !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+# Main title with enhanced styling
+st.markdown(
+    """
+<div class="main-header">
+    <h1>🚛 Simulateur de Rotation des Camions</h1>
+    <p>Étude d'optimisation pour la mise en œuvre d'enrobé</p>
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    """
+<div class="section-header">
+    <h2>📊 1. Simulation de la rotation des camions</h2>
+</div>
+""",
+    unsafe_allow_html=True,
+)
 
 
 col1, col2 = st.columns(2)
 with col1:
-    st.subheader("Données de base")
+    st.markdown(
+        """
+    <div class="data-section">
+        <h3>⚙️ Données de base</h3>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
     c_poste = st.number_input(
-        "Débit du poste d'enrobé (tonnes/heure)", min_value=50, value=180
+        "🏭 Débit du poste d'enrobé (tonnes/heure)",
+        min_value=50,
+        value=180,
+        help="Capacité de production du poste d'enrobé",
     )
-    c_camions = st.number_input("Capacité des camions (tonnes)", min_value=5, value=40)
-    d_bache = st.number_input("Durée de bâchage (minutes)", min_value=1, value=8)
+    c_camions = st.number_input(
+        "🚛 Capacité des camions (tonnes)",
+        min_value=5,
+        value=40,
+        help="Charge maximale que peut transporter un camion",
+    )
+    d_bache = st.number_input(
+        "⏱️ Durée de bâchage (minutes)",
+        min_value=1,
+        value=8,
+        help="Temps nécessaire pour bâcher le camion",
+    )
     t_dechargement = st.number_input(
-        "Temps de déchargement au finisher (minutes)", min_value=1, value=8
+        "⏳ Temps de déchargement au finisher (minutes)",
+        min_value=1,
+        value=8,
+        help="Temps pour décharger l'enrobé à l'atelier",
     )
-    v_allez = st.slider("Interval vitesse allez (camions)", 0, 100, (15, 25), 5)
+    v_allez = st.slider(
+        "🏃 Intervalle vitesse aller (km/h)",
+        0,
+        100,
+        (15, 25),
+        5,
+        help="Vitesse des camions chargés vers l'atelier",
+    )
+
 with col2:
-    st.subheader("Données de production")
-    n_camion = st.number_input("Nombre de camions", min_value=1, value=10)
+    st.markdown(
+        """
+    <div class="data-section">
+        <h3>🎯 Données de production</h3>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+    n_camion = st.number_input(
+        "🚚 Nombre de camions",
+        min_value=1,
+        value=10,
+        help="Nombre total de camions dans la flotte",
+    )
     distance = st.number_input(
-        "Distance entre le poste d'enrobé et l'atelier (mètres)",
+        "📏 Distance poste d'enrobé ↔ atelier (mètres)",
         min_value=500,
         value=1000,
+        help="Distance entre le poste d'enrobé et l'atelier",
     )
     q_cible = st.number_input(
-        "Quantité cible d'enrobé à produire/poser (tonnes)", min_value=40, value=1000
+        "🎯 Quantité cible d'enrobé (tonnes)",
+        min_value=40,
+        value=1000,
+        help="Objectif de production total",
     )
     n_start = st.number_input(
-        "Nombre de camions à stocker avant de commencer la M.O",
+        "🚥 Camions requis pour démarrer la M.O",
         min_value=1,
         value=1,
+        help="Nombre de camions nécessaires à l'atelier avant de commencer la pose",
     )
-    v_retour = st.slider("Interval vitesse retour (camions)", 0, 100, (30, 40), 5)
+    v_retour = st.slider(
+        "🔄 Intervalle vitesse retour (km/h)",
+        0,
+        100,
+        (30, 40),
+        5,
+        help="Vitesse des camions vides retournant au poste",
+    )
 
 min_a, max_a = v_allez
 min_r, max_r = v_retour
@@ -97,12 +309,20 @@ class AsphaltSimulation:
             "truck_utilization": [],
             "plant_utilization": 0,
             "machine_utilization": 0,
+            "machine_usage_duration": 0,
+            "machine_idle_time": 0,
+            "machine_longest_gap": 0,
         }
 
         # Suivi de la production du poste d'enrobé
         self.plant_production = 0
         self.plant_start_time = 0
         self.machine_laying_time = 0
+
+        # Suivi des temps d'utilisation de l'atelier
+        self.machine_first_usage_time = None
+        self.machine_last_usage_time = None
+        self.machine_usage_periods = []  # Liste des périodes d'utilisation (start_time, end_time)
 
         # Contrôle de la simulation
         self.simulation_done = (
@@ -187,8 +407,21 @@ class AsphaltSimulation:
             # 5. Attendre et décharger à l'atelier
             with self.machine_unloader.request() as request:
                 yield request
-                machine_start_time = self.env.now
+                usage_start_time = self.env.now
+
+                # Enregistrer la première utilisation de l'atelier
+                if self.machine_first_usage_time is None:
+                    self.machine_first_usage_time = usage_start_time
+
                 yield self.env.timeout(self.UNLOADING_TIME)
+
+                usage_end_time = self.env.now
+
+                # Enregistrer cette période d'utilisation
+                self.machine_usage_periods.append((usage_start_time, usage_end_time))
+
+                # Mettre à jour la dernière utilisation de l'atelier
+                self.machine_last_usage_time = usage_end_time
                 # Ajouter le minimum entre la capacité du camion et le reste à livrer
                 remaining = (
                     self.target_quantity - self.stats["total_asphalt_laid"]
@@ -290,6 +523,42 @@ class AsphaltSimulation:
             (avg_working_trucks / self.num_trucks) * 100 if self.num_trucks > 0 else 0
         )
 
+        # Calculer la durée d'utilisation de l'atelier (de la première à la dernière utilisation)
+        if (
+            self.machine_first_usage_time is not None
+            and self.machine_last_usage_time is not None
+        ):
+            self.stats["machine_usage_duration"] = (
+                self.machine_last_usage_time - self.machine_first_usage_time
+            )
+
+            # Calculer le temps d'inactivité et le plus grand gap
+            if len(self.machine_usage_periods) > 1:
+                # Trier les périodes par heure de début (au cas où)
+                sorted_periods = sorted(self.machine_usage_periods, key=lambda x: x[0])
+
+                total_idle_time = 0
+                longest_gap = 0
+
+                # Calculer les gaps entre les utilisations consécutives
+                for i in range(len(sorted_periods) - 1):
+                    current_end = sorted_periods[i][1]
+                    next_start = sorted_periods[i + 1][0]
+                    gap = next_start - current_end
+
+                    total_idle_time += gap
+                    longest_gap = max(longest_gap, gap)
+
+                self.stats["machine_idle_time"] = total_idle_time
+                self.stats["machine_longest_gap"] = longest_gap
+            else:
+                self.stats["machine_idle_time"] = 0
+                self.stats["machine_longest_gap"] = 0
+        else:
+            self.stats["machine_usage_duration"] = 0
+            self.stats["machine_idle_time"] = 0
+            self.stats["machine_longest_gap"] = 0
+
 
 # Initialiser le session state pour persister les résultats
 if "simulation_results" not in st.session_state:
@@ -308,32 +577,125 @@ def run_sim():
     st.success("Simulation terminée avec succès!")
 
 
-if st.button("Lancer la simulation"):
-    with st.spinner("Simulation en cours..."):
-        run_sim()
+# Action buttons with enhanced styling
+col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
+
+with col_btn1:
+    if st.button("🚀 Lancer la simulation", use_container_width=True):
+        with st.spinner("⏳ Simulation en cours..."):
+            run_sim()
+
+with col_btn2:
+    if st.button("🔄 Réinitialiser", use_container_width=True):
+        st.session_state.simulation_results = None
+        st.success("✅ Résultats réinitialisés!")
+
+with col_btn3:
+    st.info(
+        "💡 Ajustez les paramètres ci-dessus puis lancez la simulation pour voir les résultats"
+    )
 
 # Afficher les résultats seulement si la simulation a été lancée
 if (
     st.session_state.simulation_results is not None
     and st.session_state.simulation_results["time_stamps"]
 ):
-    st.subheader("Résultats de la simulation")
+    st.markdown(
+        """
+    <div class="section-header">
+        <h2>📈 Résultats de la simulation</h2>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
 
     # Récupérer les résultats depuis session state
     stats = st.session_state.simulation_results
 
-    # Afficher les statistiques principales
-    col1, col2, col3 = st.columns(3)
+    # Afficher les statistiques principales avec des icônes
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("Total livré", f"{stats['total_asphalt_delivered']:.1f} t")
-        st.metric("Total posé", f"{stats['total_asphalt_laid']:.1f} t")
+        st.metric(
+            "📦 Total livré",
+            f"{stats['total_asphalt_delivered']:.1f} t",
+            help="Quantité totale d'enrobé livré",
+        )
+        st.metric(
+            "🏭 Utilisation poste",
+            f"{stats['plant_utilization']:.1f}%",
+            help="Pourcentage d'utilisation du poste d'enrobé",
+        )
     with col2:
-        st.metric("Utilisation poste d'enrobé", f"{stats['plant_utilization']:.1f}%")
-        st.metric("Utilisation atelier", f"{stats['machine_utilization']:.1f}%")
+        st.metric(
+            "🛣️ Total posé",
+            f"{stats['total_asphalt_laid']:.1f} t",
+            help="Quantité totale d'enrobé posé",
+        )
+        st.metric(
+            "⚙️ Utilisation atelier",
+            f"{stats['machine_utilization']:.1f}%",
+            help="Pourcentage d'utilisation de l'atelier",
+        )
     with col3:
         duration_hours = stats["time_stamps"][-1] / 60
-        st.metric("Durée simulation", f"{duration_hours:.2f} h")
-        st.metric("Utilisation camions", f"{stats['truck_utilization']:.1f}%")
+        st.metric(
+            "⏰ Durée simulation",
+            f"{duration_hours:.2f} h",
+            help="Durée totale de la simulation",
+        )
+        st.metric(
+            "🚛 Utilisation camions",
+            f"{stats['truck_utilization']:.1f}%",
+            help="Pourcentage d'utilisation des camions",
+        )
+    with col4:
+        machine_usage_hours = stats.get("machine_usage_duration", 0) / 60
+        st.metric(
+            "🕐 Durée usage atelier",
+            f"{machine_usage_hours:.2f} h",
+            help="Durée d'utilisation effective de l'atelier",
+        )
+        if duration_hours > 0:
+            machine_coverage = (machine_usage_hours / duration_hours) * 100
+            st.metric(
+                "📊 Couverture atelier",
+                f"{machine_coverage:.1f}%",
+                help="Pourcentage de couverture de l'atelier",
+            )
+
+    # Afficher les statistiques d'inactivité de l'atelier
+    st.markdown(
+        """
+    <div class="info-box info-box-warning">
+        <h3>⏸️ Analyse des périodes d'inactivité de l'atelier</h3>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+    col1_idle, col2_idle, col3_idle = st.columns(3)
+    with col1_idle:
+        machine_idle_hours = stats.get("machine_idle_time", 0) / 60
+        st.metric(
+            "⏸️ Temps total inactif",
+            f"{machine_idle_hours:.2f} h",
+            help="Temps total d'inactivité de l'atelier",
+        )
+    with col2_idle:
+        machine_longest_gap_hours = stats.get("machine_longest_gap", 0) / 60
+        st.metric(
+            "⏱️ Plus long arrêt",
+            f"{machine_longest_gap_hours*60:.2f} min",
+            help="Durée du plus long arrêt de l'atelier",
+        )
+    with col3_idle:
+        if machine_usage_hours > 0:
+            idle_percentage = (machine_idle_hours / machine_usage_hours) * 100
+            st.metric(
+                "📉 % inactivité/usage",
+                f"{idle_percentage:.1f}%",
+                help="Pourcentage d'inactivité par rapport au temps d'usage",
+            )
 
     # Graphique 1 : évolution des camions
     data_dict = {
@@ -343,20 +705,38 @@ if (
         "trucks_on_road": stats["trucks_on_road"],
     }
     df_line = pd.DataFrame(data_dict)
-    st.subheader("Graphique de la rotation des camions")
+
+    st.markdown(
+        """
+    <div class="info-box info-box-success">
+        <h3>🔄 Graphique de la rotation des camions</h3>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
     st.line_chart(
         df_line.set_index("time_stamps"), use_container_width=True, height=500
     )
 
     # Graphique 2 : taux d'utilisation des camions
-    metrics = ["Poste d'enrobé", "Atelier", "Camions"]
+    metrics = ["🏭 Poste d'enrobé", "⚙️ Atelier", "🚛 Camions"]
     utilizations = [
         round(stats["plant_utilization"], 2),
         round(stats["machine_utilization"], 2),
         round(stats["truck_utilization"], 2),
     ]
     df_bar = pd.DataFrame({"Metrics": metrics, "Utilizations": utilizations})
-    st.subheader("Efficience par rapport à la durée totale")
+
+    st.markdown(
+        """
+    <div class="info-box info-box-info">
+        <h3>📊 Efficience par rapport à la durée totale</h3>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
     st.bar_chart(
         df_bar.set_index("Metrics"),
         use_container_width=True,
@@ -364,22 +744,60 @@ if (
     )
 
 else:
-    st.info("Cliquez sur 'Lancer la simulation' pour voir les résultats.")
+    st.markdown(
+        """
+    <div class="info-box info-box-error">
+        <h3>🎯 Prêt à simuler ?</h3>
+        <p>Cliquez sur '<strong>🚀 Lancer la simulation</strong>' pour voir les résultats détaillés</p>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
 
 
-st.divider()
-st.header("2. Impact du nombre de camions sur la productivité")
-max_camion = st.number_input(
-    "Nombre max des camions pour la simulation", min_value=1, value=n_camion + 5
+st.markdown(
+    """
+<div class="section-header">
+    <h2>🎯 2. Impact du nombre de camions sur la productivité</h2>
+</div>
+""",
+    unsafe_allow_html=True,
 )
-sim_distance = st.number_input(
-    "Distance pour la simulation (mètres)",
-    min_value=500,
-    value=distance,
+
+st.markdown(
+    """
+<div class="data-section">
+    <h3>⚙️ Paramètres d'optimisation</h3>
+</div>
+""",
+    unsafe_allow_html=True,
 )
-sim_q_cible = st.number_input(
-    "Quantité cible d'enrobé pour la simulation (tonnes)", min_value=40, value=q_cible
-)
+
+col_opt1, col_opt2, col_opt3 = st.columns(3)
+
+with col_opt1:
+    max_camion = st.number_input(
+        "🔢 Nombre max de camions à tester",
+        min_value=1,
+        value=n_camion + 5,
+        help="Limite supérieure pour l'analyse d'optimisation",
+    )
+
+with col_opt2:
+    sim_distance = st.number_input(
+        "📏 Distance pour la simulation (mètres)",
+        min_value=500,
+        value=distance,
+        help="Distance utilisée pour l'analyse d'optimisation",
+    )
+
+with col_opt3:
+    sim_q_cible = st.number_input(
+        "🎯 Quantité cible pour la simulation (tonnes)",
+        min_value=40,
+        value=q_cible,
+        help="Objectif de production pour l'analyse",
+    )
 
 
 def optimize_truck_fleet(distance, target_quantity, max_trucks=max_camion):
@@ -409,6 +827,9 @@ def optimize_truck_fleet(distance, target_quantity, max_trucks=max_camion):
                 "avg_at_plant": np.mean(sim.stats["trucks_at_plant"]),
                 "avg_at_machine": np.mean(sim.stats["trucks_at_machine"]),
                 "avg_on_road": np.mean(sim.stats["trucks_on_road"]),
+                "machine_idle_time": sim.stats["machine_idle_time"],
+                "machine_longest_gap": sim.stats["machine_longest_gap"],
+                "machine_usage_duration": sim.stats["machine_usage_duration"],
             }
         )
     # Trouver le nombre de camions qui maximise l'utilisation de l'atelier
@@ -442,20 +863,62 @@ df_optimisation = df_optimisation.rename(
         "avg_at_plant": "Moy. au Poste",
         "avg_at_machine": "Moy. à l'Atelier",
         "avg_on_road": "Moy. sur Route",
+        "machine_idle_time": "Temps Inactif Atelier (min)",
+        "machine_longest_gap": "Plus Long Arrêt (min)",
+        "machine_usage_duration": "Durée Usage Atelier (min)",
     }
 )
-if st.button("Afficher les résultats d'optimisation"):
-    st.subheader("Tableau des résultats d'optimisation")
-    st.dataframe(df_optimisation)
+if st.button("📊 Afficher les résultats d'optimisation", use_container_width=True):
+    with st.spinner("🔄 Analyse d'optimisation en cours..."):
+        # Progress bar simulation
+        progress_bar = st.progress(0)
+        for i in range(100):
+            progress_bar.progress(i + 1)
 
-    st.subheader("Evolution de l'efficience en fonction du nombre de camions")
+        st.markdown(
+            """
+        <div class="info-box info-box-success">
+            <h3>📋 Tableau des résultats d'optimisation</h3>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
+
+        # Style the dataframe
+        styled_df = df_optimisation.style.format(
+            {
+                "Utilisation Poste (%)": "{:.1f}%",
+                "Utilisation Atelier (%)": "{:.1f}%",
+                "Utilisation Camions (%)": "{:.1f}%",
+                "Total Posé (t)": "{:.0f}",
+                "Moy. au Poste": "{:.1f}",
+                "Moy. à l'Atelier": "{:.1f}",
+                "Moy. sur Route": "{:.1f}",
+                "Temps Inactif Atelier (min)": "{:.1f}",
+                "Plus Long Arrêt (min)": "{:.1f}",
+                "Durée Usage Atelier (min)": "{:.1f}",
+            }
+        ).background_gradient(subset=["Utilisation Atelier (%)"], cmap="RdYlGn")
+
+        st.dataframe(styled_df, use_container_width=True)
+
+    st.markdown(
+        """
+    <div class="info-box info-box-success">
+        <h3>📈 Evolution de l'efficience en fonction du nombre de camions</h3>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
     fig = go.Figure()
 
     fig.add_trace(
         go.Scatter(
             x=df_optimisation["Camions"],
             y=df_optimisation["Utilisation Atelier (%)"],
-            name="Util.Atelier",  # Style name/legend entry with html tags
+            name="⚙️ Util.Atelier",
+            line=dict(color="#FF6B35", width=3),
             connectgaps=True,
         )
     )
@@ -463,7 +926,8 @@ if st.button("Afficher les résultats d'optimisation"):
         go.Scatter(
             x=df_optimisation["Camions"],
             y=df_optimisation["Utilisation Poste (%)"],
-            name="Util.Poste",  # Style name/legend entry with html tags
+            name="🏭 Util.Poste",
+            line=dict(color="#4CAF50", width=3),
             connectgaps=True,
         )
     )
@@ -471,22 +935,40 @@ if st.button("Afficher les résultats d'optimisation"):
         go.Scatter(
             x=df_optimisation["Camions"],
             y=df_optimisation["Utilisation Camions (%)"],
-            name="Util.Camions",  # Style name/legend entry with html tags
+            name="🚛 Util.Camions",
+            line=dict(color="#2196F3", width=3),
             connectgaps=True,
         )
     )
-    st.plotly_chart(fig, theme="streamlit")
 
-    st.subheader(
-        "Evolution de la moyenne des camions à chaque station en fonction du nombre total de camions"
+    fig.update_layout(
+        title="Évolution de l'efficience",
+        xaxis_title="Nombre de Camions",
+        yaxis_title="Utilisation (%)",
+        template="plotly_white",
+        showlegend=True,
+        height=500,
     )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown(
+        """
+    <div class="info-box info-box-info">
+        <h3>🚛 Distribution des camions par station</h3>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
     fig = go.Figure()
 
     fig.add_trace(
         go.Scatter(
             x=df_optimisation["Camions"],
             y=df_optimisation["Moy. au Poste"],
-            name="Moy. au Poste",  # Style name/legend entry with html tags
+            name="🏭 Moy. au Poste",
+            line=dict(color="#FF9800", width=3),
             connectgaps=True,
         )
     )
@@ -494,7 +976,8 @@ if st.button("Afficher les résultats d'optimisation"):
         go.Scatter(
             x=df_optimisation["Camions"],
             y=df_optimisation["Moy. à l'Atelier"],
-            name="Moy. à l'Atelier",  # Style name/legend entry with html tags
+            name="⚙️ Moy. à l'Atelier",
+            line=dict(color="#9C27B0", width=3),
             connectgaps=True,
         )
     )
@@ -502,11 +985,63 @@ if st.button("Afficher les résultats d'optimisation"):
         go.Scatter(
             x=df_optimisation["Camions"],
             y=df_optimisation["Moy. sur Route"],
-            name="Moy. sur Route",  # Style name/legend entry with html tags
+            name="🛣️ Moy. sur Route",
+            line=dict(color="#607D8B", width=3),
             connectgaps=True,
         )
     )
-    st.plotly_chart(fig, theme="streamlit")
+
+    fig.update_layout(
+        title="Distribution moyenne des camions par station",
+        xaxis_title="Nombre total de Camions",
+        yaxis_title="Nombre moyen de camions",
+        template="plotly_white",
+        showlegend=True,
+        height=500,
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown(
+        """
+    <div class="info-box info-box-warning">
+        <h3>⏸️ Analyse des temps d'inactivité</h3>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(
+            x=df_optimisation["Camions"],
+            y=df_optimisation["Temps Inactif Atelier (min)"],
+            name="⏸️ Temps Total Inactif",
+            line=dict(color="#F44336", width=3),
+            connectgaps=True,
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=df_optimisation["Camions"],
+            y=df_optimisation["Plus Long Arrêt (min)"],
+            name="⏱️ Plus Long Arrêt",
+            line=dict(color="#FF5722", width=3),
+            connectgaps=True,
+        )
+    )
+
+    fig.update_layout(
+        title="Évolution des temps d'inactivité de l'atelier",
+        xaxis_title="Nombre de Camions",
+        yaxis_title="Temps (minutes)",
+        template="plotly_white",
+        showlegend=True,
+        height=500,
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 
     def find_stabilization_point(df, column_name, threshold=2):
         """
@@ -558,14 +1093,49 @@ if st.button("Afficher les résultats d'optimisation"):
         df_optimisation, "Utilisation Atelier (%)"
     )
     if stabilization_point:
-        st.subheader("Nombre de camions optimal")
-        st.write(
-            f"Le nombre de camions optimal est atteint avec {stabilization_point['stabilization_camions']} camions."
+        st.markdown(
+            """
+        <div class="info-box info-box-info">
+            <h3>🎯 Nombre de camions optimal</h3>
+        </div>
+        """,
+            unsafe_allow_html=True,
         )
-        st.write(
-            f"Valeur à l'index {stabilization_point['index']}: {stabilization_point['value_at_index']:.2f}%"
+
+        # Create columns for better layout
+        col_opt_1, col_opt_2 = st.columns(2)
+
+        with col_opt_1:
+            st.success(
+                f"🚛 **Optimal:** {stabilization_point['stabilization_camions']} camions"
+            )
+            st.info(
+                f"📊 **Utilisation à l'optimum:** {stabilization_point['value_at_index']:.2f}%"
+            )
+
+        with col_opt_2:
+            st.info(f"📈 **Valeur suivante:** {stabilization_point['next_value']:.2f}%")
+            st.warning(
+                f"📉 **Gain marginal:** {stabilization_point['difference']:.2f}%"
+            )
+
+        st.markdown(
+            """
+        <div class="info-box info-box-success">
+            <p><strong>💡 Interprétation:</strong> Au-delà de ce nombre optimal, 
+            l'ajout de camions supplémentaires n'améliore plus significativement 
+            l'utilisation de l'atelier (gain < 2%).</p>
+        </div>
+        """,
+            unsafe_allow_html=True,
         )
-        st.write(
-            f"Valeur suivante: {stabilization_point['next_value']:.2f}%, "
-            f"Différence: {stabilization_point['difference']:.2f}%"
+    else:
+        st.markdown(
+            """
+        <div class="info-box info-box-error">
+            <p><strong>⚠️ Attention:</strong> Aucun point de stabilisation détecté dans la plage testée. 
+            Essayez d'augmenter le nombre maximum de camions pour l'analyse.</p>
+        </div>
+        """,
+            unsafe_allow_html=True,
         )
