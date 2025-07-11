@@ -5,26 +5,26 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
-st.title("Simulation de la logistique de pose d'enrobés")
+st.title("Etude de rotation des camions pour la M.O d'enrobé")
 st.divider()
-st.header("1. Simulation du mouvement des camions")
+st.header("1. Simulation de la rotation des camions")
 
 
 col1, col2 = st.columns(2)
 with col1:
-    st.subheader("Donées de base")
+    st.subheader("Données de base")
     c_poste = st.number_input(
-        "Capacité du poste d'enrobé (tonnes/heure)", min_value=50, value=180
+        "Débit du poste d'enrobé (tonnes/heure)", min_value=50, value=180
     )
-    c_camions = st.number_input("Capacité de camions (tonnes)", min_value=5, value=40)
+    c_camions = st.number_input("Capacité des camions (tonnes)", min_value=5, value=40)
     d_bache = st.number_input("Durée de bâchage (minutes)", min_value=1, value=8)
     t_dechargement = st.number_input(
-        "Temps de déchargement (minutes)", min_value=1, value=8
+        "Temps de déchargement au finisher (minutes)", min_value=1, value=8
     )
-    v_allez = st.slider("Interval vitesse allez(camions)", 0, 100, (15, 25), 5)
+    v_allez = st.slider("Interval vitesse allez (camions)", 0, 100, (15, 25), 5)
 with col2:
-    st.subheader("Donées de production")
-    n_camion = st.number_input("Nombre du camions", min_value=1, value=10)
+    st.subheader("Données de production")
+    n_camion = st.number_input("Nombre de camions", min_value=1, value=10)
     distance = st.number_input(
         "Distance entre le poste d'enrobé et l'atelier (mètres)",
         min_value=500,
@@ -34,7 +34,7 @@ with col2:
         "Quantité cible d'enrobé à produire/poser (tonnes)", min_value=40, value=1000
     )
     n_start = st.number_input(
-        "Nombre de camions a stockeravant de commencer la pose",
+        "Nombre de camions à stocker avant de commencer la M.O",
         min_value=1,
         value=1,
     )
@@ -343,7 +343,7 @@ if (
         "trucks_on_road": stats["trucks_on_road"],
     }
     df_line = pd.DataFrame(data_dict)
-    st.subheader("Graphique du mouvement des camions")
+    st.subheader("Graphique de la rotation des camions")
     st.line_chart(
         df_line.set_index("time_stamps"), use_container_width=True, height=500
     )
@@ -478,7 +478,7 @@ if st.button("Afficher les résultats d'optimisation"):
     st.plotly_chart(fig, theme="streamlit")
 
     st.subheader(
-        "Evolution de la moyenne à chaque station en fonction du nombre de camions"
+        "Evolution de la moyenne des camions à chaque station en fonction du nombre total de camions"
     )
     fig = go.Figure()
 
