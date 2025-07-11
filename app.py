@@ -18,30 +18,42 @@ st.markdown(
     """
 <style>
     .main-header {
-        background: linear-gradient(90deg, #FF6B35 0%, #F7931E 100%);
-        padding: 2rem;
-        border-radius: 10px;
-        margin-bottom: 2rem;
+        background: linear-gradient(90deg, #5D6D7E 0%, #85929E 100%);
+        padding: 1.2rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
         text-align: center;
         color: white !important;
     }
+    .main-header h1 {
+        font-size: 2.2rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    .main-header p {
+        font-size: 1rem !important;
+        margin-bottom: 0 !important;
+    }
     .section-header {
-        background: linear-gradient(90deg, #4CAF50 0%, #45a049 100%);
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
+        background: linear-gradient(90deg, #7B8A8B 0%, #A2A9AF 100%);
+        padding: 0.8rem;
+        border-radius: 6px;
+        margin: 0.8rem 0;
         color: white !important;
         text-align: center;
+    }
+    .section-header h2 {
+        font-size: 1.5rem !important;
+        margin-bottom: 0 !important;
     }
     .metric-card {
         background: var(--background-color, white);
         padding: 1rem;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-left: 4px solid #FF6B35;
+        border-left: 4px solid #7B8A8B;
     }
     .stButton > button {
-        background: linear-gradient(90deg, #FF6B35 0%, #F7931E 100%) !important;
+        background: linear-gradient(90deg, #7B8A8B 0%, #A2A9AF 100%) !important;
         color: white !important;
         border: none !important;
         border-radius: 20px !important;
@@ -57,9 +69,14 @@ st.markdown(
         background: rgba(248, 249, 250, 0.8);
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 1.5rem;
-        border-radius: 10px;
-        margin: 1rem 0;
+        padding: 1.2rem;
+        border-radius: 8px;
+        margin: 0.8rem 0;
+    }
+    .data-section h3 {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.8rem !important;
+        color: #5D6D7E !important;
     }
     
     /* Dark mode specific styles */
@@ -68,68 +85,74 @@ st.markdown(
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
     
+    [data-theme="dark"] .data-section h3 {
+        color: #A2A9AF !important;
+    }
+    
     /* Info boxes with dark mode support */
     .info-box {
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
+        padding: 0.8rem;
+        border-radius: 6px;
+        margin: 0.8rem 0;
         border-left: 4px solid;
     }
     
     .info-box-success {
-        background: rgba(212, 237, 218, 0.8);
-        border-left-color: #28a745;
-        color: #155724;
+        background: rgba(232, 245, 233, 0.8);
+        border-left-color: #6C7A6B;
+        color: #2E3B2E;
     }
     
     .info-box-warning {
-        background: rgba(255, 243, 205, 0.8);
-        border-left-color: #ffc107;
-        color: #856404;
+        background: rgba(255, 248, 225, 0.8);
+        border-left-color: #B8860B;
+        color: #7D5A00;
     }
     
     .info-box-info {
-        background: rgba(209, 236, 241, 0.8);
-        border-left-color: #17a2b8;
-        color: #0c5460;
+        background: rgba(227, 242, 253, 0.8);
+        border-left-color: #5A7A95;
+        color: #1E3A52;
     }
     
     .info-box-error {
-        background: rgba(248, 215, 218, 0.8);
-        border-left-color: #dc3545;
-        color: #721c24;
+        background: rgba(248, 235, 234, 0.8);
+        border-left-color: #A85A5A;
+        color: #6B2C2C;
     }
     
     /* Dark mode overrides for info boxes */
     [data-theme="dark"] .info-box-success {
-        background: rgba(40, 167, 69, 0.2);
-        color: #9ae6b4;
+        background: rgba(108, 122, 107, 0.2);
+        color: #B8D4B8;
     }
     
     [data-theme="dark"] .info-box-warning {
-        background: rgba(255, 193, 7, 0.2);
-        color: #fbb040;
+        background: rgba(184, 134, 11, 0.2);
+        color: #E6CC80;
     }
     
     [data-theme="dark"] .info-box-info {
-        background: rgba(23, 162, 184, 0.2);
-        color: #74c0fc;
+        background: rgba(90, 122, 149, 0.2);
+        color: #A8C5E0;
     }
     
     [data-theme="dark"] .info-box-error {
-        background: rgba(220, 53, 69, 0.2);
-        color: #ffa8a8;
+        background: rgba(168, 90, 90, 0.2);
+        color: #E0A8A8;
     }
     
     /* Text color adjustments */
     .info-box h3 {
         color: inherit !important;
-        margin: 0 0 0.5rem 0;
+        margin: 0 0 0.4rem 0 !important;
+        font-size: 1.1rem !important;
     }
     
     .info-box p {
         color: inherit !important;
-        margin: 0;
+        margin: 0 !important;
+        font-size: 0.9rem !important;
     }
     
     /* Ensure proper contrast in all themes */
