@@ -19,15 +19,15 @@ st.markdown(
 <style>
     .main-header {
         background: linear-gradient(90deg, #5D6D7E 0%, #85929E 100%);
-        padding: 1.2rem;
+        padding: 0.8rem;
         border-radius: 8px;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
         text-align: center;
         color: white !important;
     }
     .main-header h1 {
-        font-size: 2.2rem !important;
-        margin-bottom: 0.5rem !important;
+        font-size: 2rem !important;
+        margin-bottom: 0.1rem !important;
     }
     .main-header p {
         font-size: 1rem !important;
@@ -35,19 +35,19 @@ st.markdown(
     }
     .section-header {
         background: linear-gradient(90deg, #7B8A8B 0%, #A2A9AF 100%);
-        padding: 0.8rem;
+        padding: 0.2rem;
         border-radius: 6px;
-        margin: 0.8rem 0;
+        margin: 0.5rem 0;
         color: white !important;
         text-align: center;
     }
     .section-header h2 {
-        font-size: 1.5rem !important;
+        font-size: 1.2rem !important;
         margin-bottom: 0 !important;
     }
     .metric-card {
         background: var(--background-color, white);
-        padding: 1rem;
+        padding: 0.8rem;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         border-left: 4px solid #7B8A8B;
@@ -69,13 +69,13 @@ st.markdown(
         background: rgba(248, 249, 250, 0.8);
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 1.2rem;
+        padding: 0.8rem;
         border-radius: 8px;
         margin: 0.8rem 0;
     }
     .data-section h3 {
         font-size: 1.1rem !important;
-        margin-bottom: 0.8rem !important;
+        margin-bottom: 0.1rem !important;
         color: #5D6D7E !important;
     }
     
@@ -91,7 +91,7 @@ st.markdown(
     
     /* Info boxes with dark mode support */
     .info-box {
-        padding: 0.8rem;
+        padding: 0.2rem;
         border-radius: 6px;
         margin: 0.8rem 0;
         border-left: 4px solid;
@@ -356,6 +356,8 @@ class AsphaltSimulation:
         # Pour la logique de démarrage de la pose
         self.trucks_waiting_at_machine = []
         self.laying_started = False
+        self.laying_start_time = None
+        self.trucks_at_laying_start = 0
 
     def kmh_to_ms(self, speed_kmh):
         """Convertir km/h en m/s"""
@@ -371,6 +373,38 @@ class AsphaltSimulation:
         speed_ms = self.kmh_to_ms(speed_kmh)
         travel_time_seconds = distance / speed_ms
         return travel_time_seconds / 60  # Conversion en minutes
+
+    def check_and_start_laying(self):
+        """Vérifier si la pose peut commencer et la démarrer si nécessaire"""
+        if (
+            not self.laying_started
+            and len(self.trucks_waiting_at_machine)
+            >= self.trucks_required_to_start_laying
+        ):
+            self.laying_started = True
+            # Record the exact moment when laying starts for better tracking
+            self.laying_start_time = self.env.now
+            self.trucks_at_laying_start = len(self.trucks_waiting_at_machine)
+            return True
+        return False
+
+    def get_truck_counts(self):
+        """Obtenir le nombre de camions à chaque location pour le monitoring"""
+        trucks_at_plant = len(self.plant_loader.queue) + len(self.plant_loader.users)
+
+        # Logic depends on whether laying has started or not
+        if not self.laying_started:
+            # Before laying starts: only count trucks waiting at machine
+            trucks_at_machine = len(self.trucks_waiting_at_machine)
+        else:
+            # After laying starts: count queue + users of machine unloader
+            # (trucks move from waiting list to the actual queue/processing)
+            trucks_at_machine = len(self.machine_unloader.queue) + len(
+                self.machine_unloader.users
+            )
+
+        trucks_on_road = self.num_trucks - trucks_at_plant - trucks_at_machine
+        return trucks_at_plant, trucks_at_machine, trucks_on_road
 
     def plant_process(self):
         """Simuler la production du poste d'enrobé"""
@@ -390,11 +424,15 @@ class AsphaltSimulation:
                 break
 
     def truck_process(self, truck_id):
-        """Simuler le cycle d'un camion"""
+        """Simuler le cycle d'un camion (les camions commencent au poste d'enrobé)"""
+        first_cycle = True
         while True:
-            # 1. Aller au poste d'enrobé (à vide)
-            travel_time = self.calculate_travel_time(self.distance, is_loaded=False)
-            yield self.env.timeout(travel_time)
+            # 1. Aller au poste d'enrobé (à vide) - sauf pour le premier cycle où les camions sont déjà au poste
+            if not first_cycle:
+                travel_time = self.calculate_travel_time(self.distance, is_loaded=False)
+                yield self.env.timeout(travel_time)
+
+            first_cycle = False
 
             # 2. Attendre et charger au poste d'enrobé
             with self.plant_loader.request() as request:
@@ -417,19 +455,27 @@ class AsphaltSimulation:
             # 3. Aller à l'atelier (chargé)
             travel_time = self.calculate_travel_time(self.distance, is_loaded=True)
             yield self.env.timeout(travel_time)
-            # 4. Attendre à l'atelier jusqu'à ce qu'il y ait assez de camions
+
+            # 4. Arriver à l'atelier et vérifier si la pose peut commencer
             self.trucks_waiting_at_machine.append(truck_id)
+
+            # Check if we can start laying immediately using the dedicated method
+            self.check_and_start_laying()
+
+            # Wait until laying has started
             while not self.laying_started:
-                if (
-                    len(self.trucks_waiting_at_machine)
-                    >= self.trucks_required_to_start_laying
-                ):
-                    self.laying_started = True
-                else:
-                    yield self.env.timeout(1)  # Attendre 1 minute et vérifier à nouveau
+                # Re-check if we can start laying while waiting
+                self.check_and_start_laying()
+                yield self.env.timeout(1)  # Wait 1 minute and check again
+
             # 5. Attendre et décharger à l'atelier
             with self.machine_unloader.request() as request:
                 yield request
+
+                # Retirer le camion de la liste d'attente dès qu'il commence à décharger
+                if truck_id in self.trucks_waiting_at_machine:
+                    self.trucks_waiting_at_machine.remove(truck_id)
+
                 usage_start_time = self.env.now
 
                 # Enregistrer la première utilisation de l'atelier
@@ -454,9 +500,6 @@ class AsphaltSimulation:
                 delivered = min(self.TRUCK_CAPACITY, remaining)
                 self.stats["total_asphalt_laid"] += delivered
                 self.machine_laying_time += self.UNLOADING_TIME
-                # Retirer le camion de la liste d'attente
-                if truck_id in self.trucks_waiting_at_machine:
-                    self.trucks_waiting_at_machine.remove(truck_id)
                 # Si c'est le dernier camion, incrémenter le compteur
                 if (
                     self.target_quantity is not None
@@ -477,14 +520,8 @@ class AsphaltSimulation:
     def monitor_system(self, time_step=5):
         """Surveiller l'état du système à intervalles réguliers"""
         while True:
-            # Compter les camions à différents endroits
-            trucks_at_plant = len(self.plant_loader.queue) + len(
-                self.plant_loader.users
-            )
-            trucks_at_machine = len(self.machine_unloader.queue) + len(
-                self.machine_unloader.users
-            )
-            trucks_on_road = self.num_trucks - trucks_at_plant - trucks_at_machine
+            # Utiliser la méthode get_truck_counts pour obtenir les compteurs
+            trucks_at_plant, trucks_at_machine, trucks_on_road = self.get_truck_counts()
 
             # Enregistrer les statistiques
             self.stats["time_stamps"].append(self.env.now)
@@ -554,6 +591,8 @@ class AsphaltSimulation:
             self.stats["machine_usage_duration"] = (
                 self.machine_last_usage_time - self.machine_first_usage_time
             )
+            # Stocker le temps de début de l'atelier pour le graphique
+            self.stats["machine_start_time"] = self.machine_first_usage_time
 
             # Calculer le temps d'inactivité et le plus grand gap
             if len(self.machine_usage_periods) > 1:
@@ -581,6 +620,7 @@ class AsphaltSimulation:
             self.stats["machine_usage_duration"] = 0
             self.stats["machine_idle_time"] = 0
             self.stats["machine_longest_gap"] = 0
+            self.stats["machine_start_time"] = None
 
 
 # Initialiser le session state pour persister les résultats
@@ -604,7 +644,7 @@ def run_sim():
 col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
 
 with col_btn1:
-    if st.button("🚀 Lancer la simulation", use_container_width=True):
+    if st.button("🚀 Simuler !", use_container_width=True):
         with st.spinner("⏳ Simulation en cours..."):
             run_sim()
 
@@ -738,9 +778,83 @@ if (
         unsafe_allow_html=True,
     )
 
-    st.line_chart(
-        df_line.set_index("time_stamps"), use_container_width=True, height=500
+    # Créer un graphique Plotly avec zone ombrée
+    fig_trucks = go.Figure()
+
+    # Ajouter les lignes pour chaque type de camion
+    fig_trucks.add_trace(
+        go.Scatter(
+            x=df_line["time_stamps"],
+            y=df_line["trucks_at_plant"],
+            name="🏭 Camions au poste",
+            line=dict(color="#4CAF50", width=2),
+            connectgaps=True,
+        )
     )
+    fig_trucks.add_trace(
+        go.Scatter(
+            x=df_line["time_stamps"],
+            y=df_line["trucks_at_machine"],
+            name="⚙️ Camions à l'atelier",
+            line=dict(color="#FF6B35", width=2),
+            connectgaps=True,
+        )
+    )
+    fig_trucks.add_trace(
+        go.Scatter(
+            x=df_line["time_stamps"],
+            y=df_line["trucks_on_road"],
+            name="🛣️ Camions sur route",
+            line=dict(color="#2196F3", width=2),
+            connectgaps=True,
+        )
+    )
+
+    # Ajouter la zone ombrée pour indiquer quand l'atelier fonctionne
+    machine_start_time = stats.get("machine_start_time")
+    if machine_start_time is not None:
+        max_time = max(df_line["time_stamps"])
+        max_trucks = max(
+            df_line["trucks_at_plant"].max(),
+            df_line["trucks_at_machine"].max(),
+            df_line["trucks_on_road"].max(),
+        )
+
+        fig_trucks.add_shape(
+            type="rect",
+            x0=machine_start_time,
+            y0=0,
+            x1=max_time,
+            y1=max_trucks,
+            fillcolor="rgba(144, 238, 144, 0.2)",
+            line=dict(width=0),
+            layer="below",
+        )
+
+        # Ajouter une annotation pour expliquer la zone ombrée
+        fig_trucks.add_annotation(
+            x=machine_start_time + (max_time - machine_start_time) / 2,
+            y=max_trucks * 0.9,
+            text="Mise en oeuvre",
+            showarrow=False,
+            font=dict(size=12, color="green"),
+            bgcolor="rgba(255, 255, 255, 0.8)",
+            bordercolor="green",
+            borderwidth=1,
+        )
+
+    fig_trucks.update_layout(
+        title="Évolution des camions au cours du temps",
+        xaxis_title="Temps (minutes)",
+        yaxis_title="Nombre de camions",
+        template="plotly_white",
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="top", y=-0.2, xanchor="center", x=0.5),
+        height=500,
+        hovermode="x unified",
+    )
+
+    st.plotly_chart(fig_trucks, use_container_width=True)
 
     # Graphique 2 : taux d'utilisation des camions
     metrics = ["🏭 Poste d'enrobé", "⚙️ Atelier", "🚛 Camions"]
@@ -771,7 +885,7 @@ else:
         """
     <div class="info-box info-box-error">
         <h3>🎯 Prêt à simuler ?</h3>
-        <p>Cliquez sur '<strong>🚀 Lancer la simulation</strong>' pour voir les résultats détaillés</p>
+        <p>Cliquez sur '<strong>🚀 Simuler !</strong>' pour voir les résultats détaillés</p>
     </div>
     """,
         unsafe_allow_html=True,
